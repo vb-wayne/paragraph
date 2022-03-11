@@ -93,8 +93,11 @@ def load_graph_description(args):
     tempfiles = []
     logging.info("Saving %d graph json files", len(event_list))
     graph_id = 0
+    tmp_idx = 0
     for event in event_list:
-        input_json_file = tempfile.NamedTemporaryFile(dir=args.scratch_dir, mode="wt", suffix=".json", delete=False)
+        tmpPath = '{}/{}'.format(args.scratch_dir.rstrip('/'), tmp_idx // 1000)
+        os.makedirs(tmpPath, exist_ok=True)
+        input_json_file = tempfile.NamedTemporaryFile(dir=tmpPath, mode="wt", suffix=".json", delete=False)
         tempfiles.append(input_json_file.name)
         if "graph" in event:
             graph = event["graph"]
@@ -111,6 +114,7 @@ def load_graph_description(args):
         else:
             json.dump(event, input_json_file, indent=4, separators=(',', ': '))
         input_json_file.close()
+        tmp_idx += 1
     return tempfiles
 
 
@@ -331,13 +335,12 @@ def run(args):
                     id_index = fields.index("id")
                     continue
                 sample_names.append(fields[id_index])
-        if args.input.endswith("vcf") or args.input.endswith("vcf.gz"):
-            grmpyOutput = vcfupdate.read_grmpy(result_json_path)
-            result_vcf_path = os.path.join(args.output, "genotypes.vcf.gz")
-            vcf_input_path = os.path.join(args.output, "variants.vcf.gz")
-            if not os.path.exists(vcf_input_path) or not os.path.isfile(vcf_input_path):
-                vcf_input_path = args.input
-            vcfupdate.update_vcf_from_grmpy(vcf_input_path, grmpyOutput, result_vcf_path, sample_names)
+        grmpyOutput = vcfupdate.read_grmpy(result_json_path)
+        result_vcf_path = os.path.join(args.output, "genotypes.vcf.gz")
+        vcf_input_path = os.path.join(args.output, "variants.vcf.gz")
+        if not os.path.exists(vcf_input_path) or not os.path.isfile(vcf_input_path):
+            vcf_input_path = args.input
+        vcfupdate.update_vcf_from_grmpy(vcf_input_path, grmpyOutput, result_vcf_path, sample_names)
     except Exception:  # pylint: disable=W0703
         traceback.print_exc(file=LoggingWriter(logging.ERROR))
         raise

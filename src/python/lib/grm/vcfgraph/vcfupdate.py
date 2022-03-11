@@ -260,7 +260,7 @@ def set_record_for_sample(record, sample, grmpyRecord, alleleMap):
         filters.add("UNMATCHED")
     else:
         record.samples[sample]["GT"] = gt_to_set
-    record.samples[sample]["FT"] = [",".join(list(filters))]
+    record.samples[sample]["FT"] = [",".join(sorted(filters))]
     try:
         record.samples[sample]["DP"] = gt["num_reads"]
     except KeyError:
